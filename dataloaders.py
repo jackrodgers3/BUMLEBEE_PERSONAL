@@ -160,6 +160,10 @@ class GenDataset(Dataset):
 
         return torch.cat((self.ids[index][:, None], self.gen_reco_ids[:, None], masked_four_vectors, zerod_mask[:, None]), axis=1), self.four_vectors[index]
 
+    def get_standardization_params(self):
+        params = (self.gen_means, self.gen_stdevs)
+        return params
+
 
 class GenRecoDataset(Dataset):
     """
@@ -334,6 +338,7 @@ class GenRecoDataset(Dataset):
     def __len__(self):
         return self.num_events
 
+
     def __getitem__(self, index):
         """ Returns the masked four vectors, gen/reco IDs, and particle ids for the input of Bumblebee. 
             Labels are the unmasked four vectors. 50% of the time random particles' four vectors are masked with a 15% probability
@@ -366,3 +371,17 @@ class GenRecoDataset(Dataset):
         masked_four_vectors = (self.four_vectors[index] * four_vector_mask)
 
         return torch.cat((self.ids[index][:, None], self.gen_reco_ids[:, None], masked_four_vectors, zerod_mask[:, None]), axis=1), self.four_vectors[index]
+
+
+class DiscDataset(Dataset):
+    def __init__(self, target_value, sb_dataset):
+        super(DiscDataset, self).__init__()
+        self.target_value = target_value
+        self.sb_dataset = sb_dataset
+        self.targets = torch.tensor(data=[target_value for _ in range(len(sb_dataset))])
+
+    def __len__(self):
+        return len(self.sb_dataset)
+
+    def __getitem__(self, item):
+        return self.sb_dataset[item][0], self.targets[item]
